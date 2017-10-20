@@ -1,0 +1,2 @@
+# ProtectedBroadcastSample
+判断一个action是否是受保护的
