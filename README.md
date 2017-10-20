@@ -31,7 +31,7 @@ public static boolean isProtectedBroatcast(String action) {
 ```
 要想使上面的代码编译通过，还需要framework生成的jar包`framework-classes-full-debug.jar`。
 
-我用Android 8.0 代码编译生成的 `framework-classes-full-debug.jar`，放到了github，地址为：https://github.com/galian123/ProtectedBroadcastSample/blob/master/mylib/libs/framework-classes-full-debug.jar。
+我用Android 8.0 代码编译生成的 `framework-classes-full-debug.jar`，放到了github，地址为：https://github.com/galian123/ProtectedBroadcastSample/blob/master/mylib/libs/framework-classes-full-debug.jar
 
 在 build.gradle中引用 `framework-classes-full-debug.jar` 包：
 ```groovy
