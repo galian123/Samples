@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.galian.samples">
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -16,6 +17,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ProtectedActionActivity"
+            android:label="Check Action"></activity>
+        <activity
+            android:name=".ServerActvitity"
+            android:label="ServerActivity"></activity>
     </application>
 
 </manifest>

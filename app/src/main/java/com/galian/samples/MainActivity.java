@@ -1,9 +1,11 @@
 package com.galian.samples;
 
-import android.support.v7.app.AppCompatActivity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 
-import com.galian.mylib.Utils;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -11,9 +13,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        String action = "android.intent.action.BOOT_COMPLETED";
-        String action2 = "com.galian.action.MY_ACTION";
-        Utils.isProtectedBroatcast(action);
-        Utils.isProtectedBroatcast(action2);
+        ButterKnife.bind(this);
+    }
+
+    @OnClick(R.id.test_protected_action)
+    void testProtectedAction() {
+        Intent intent = new Intent(MainActivity.this, ProtectedActionActivity.class);
+        startActivity(intent);
+    }
+
+    @OnClick(R.id.test_adb_forward)
+    void testAdbForward() {
+        Intent intent = new Intent(MainActivity.this, ServerActvitity.class);
+        startActivity(intent);
     }
 }
