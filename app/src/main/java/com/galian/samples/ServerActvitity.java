@@ -9,6 +9,7 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Bundle;
 import android.os.PatternMatcher;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -26,7 +27,7 @@ import butterknife.OnClick;
 import static android.os.PatternMatcher.PATTERN_LITERAL;
 import static android.os.PatternMatcher.PATTERN_PREFIX;
 
-public class ServerActvitity extends Activity {
+public class ServerActvitity extends AppCompatActivity {
 
     private final static String TAG = "ServerActivity";
     private boolean mRunning = false;

@@ -27,4 +27,16 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MainActivity.this, ServerActvitity.class);
         startActivity(intent);
     }
+
+    @OnClick(R.id.test_rx_permission_in_activity)
+    void testRxPermissionInActivity() {
+        Intent intent = new Intent(MainActivity.this, RxPermissionTestActivity.class);
+        startActivity(intent);
+    }
+
+    @OnClick(R.id.test_rx_permission_in_fragment)
+    void testRxPermissionInFragment() {
+        Intent intent = new Intent(MainActivity.this, RxPermissionTestActivity2.class);
+        startActivity(intent);
+    }
 }
