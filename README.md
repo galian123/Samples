@@ -41,6 +41,8 @@ dependencies {
 
 ## Test 'adb forward'
 
-See ServerActivity
+See `ServerActivity`
 
+## Find strings in other apks
 
+See `CheckStringsInAppsActivity`
