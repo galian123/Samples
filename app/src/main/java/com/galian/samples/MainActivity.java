@@ -39,4 +39,10 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MainActivity.this, RxPermissionTestActivity2.class);
         startActivity(intent);
     }
+
+    @OnClick(R.id.check_strings_in_apps)
+    void checkStringsInApps() {
+        Intent intent = new Intent(MainActivity.this, CheckStringsInAppsActivity.class);
+        startActivity(intent);
+    }
 }

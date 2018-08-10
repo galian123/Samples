@@ -44,6 +44,7 @@
         <activity
             android:name=".RxPermissionTestActivity2"
             android:label="RxPermission in Fragment" />
+        <activity android:name=".CheckStringsInAppsActivity" />
     </application>
 
 </manifest>
