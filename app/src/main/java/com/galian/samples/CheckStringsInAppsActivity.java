@@ -122,6 +122,9 @@ public class CheckStringsInAppsActivity extends Activity {
                     if (RClassNameList.size() > 0) {
                         for (String RClassName : RClassNameList) {
                             String Rclass = RClassName; //pkgName + ".R$string";
+                            if (Rclass.equals("android.support.v7.appcompat.R$string")) {
+                                continue;
+                            }
                             Log.e(TAG, "R class name: " + Rclass);
                             Class RClassObj = context.getClassLoader().loadClass(Rclass);
                             ReflectUtils reflectUtils = new ReflectUtils(RClassObj);
