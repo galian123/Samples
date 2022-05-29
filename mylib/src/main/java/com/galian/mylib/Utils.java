@@ -22,11 +22,11 @@ public class Utils {
 
         try {
             cls = Class.forName("android.app.ActivityThread");
-            method = cls.getMethod("getPackageManager", null);
+            method = cls.getMethod("getPackageManager");
             if (!method.isAccessible()) {
                 method.setAccessible(true);
             }
-            IPackageManager iPackageManager = (IPackageManager) method.invoke(cls, null);
+            IPackageManager iPackageManager = (IPackageManager) method.invoke(cls);
             ret = iPackageManager.isProtectedBroadcast(action);
             Log.d(TAG, "action: " + action + " is " + (ret?"protected.":" not protected."));
         } catch (ClassNotFoundException e) {

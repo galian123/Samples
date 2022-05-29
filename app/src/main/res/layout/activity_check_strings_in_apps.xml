@@ -7,14 +7,66 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <Button
-            android:id="@+id/check_strings"
+        <EditText
+            android:id="@+id/searched_str"
+            android:layout_width="wrap_content"
+            android:layout_height="40sp"
+            android:gravity="center_vertical"
+            android:hint="Input string to be searched" />
+
+        <CheckBox
+            android:id="@+id/system_apps"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Check Strings"
-            android:textAllCaps="false" />
+            android:checked="false"
+            android:text="System apps" />
+
+        <CheckBox
+            android:id="@+id/non_system_apps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:text="Non-system apps" />
+
+        <TextView
+            android:id="@+id/tips"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="tips" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/check_strings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Check Strings"
+                android:textAllCaps="false" />
+
+            <TextView
+                android:id="@+id/progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="progress" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="result" />
+
+        <CheckBox
+            android:id="@+id/show_more_log"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:text="Show more log" />
     </LinearLayout>
 </ScrollView>
