@@ -1,10 +1,7 @@
 package com.galian.samples;
 
-import android.app.Activity;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 
 public class RxPermissionTestActivity2 extends AppCompatActivity {
 

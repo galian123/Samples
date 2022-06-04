@@ -2,48 +2,55 @@ package com.galian.samples;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.galian.samples.databinding.ActivityMainBinding;
 
 import org.lsposed.hiddenapibypass.HiddenApiBypass;
 
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
+
+    ActivityMainBinding mBinding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
+        mBinding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(mBinding.getRoot());
         HiddenApiBypass.addHiddenApiExemptions("");
+        initViews();
     }
 
-    @OnClick(R.id.test_protected_action)
+    private void initViews() {
+        mBinding.testProtectedAction.setOnClickListener(v -> testProtectedAction());
+        mBinding.testAdbForward.setOnClickListener(v -> testAdbForward());
+        mBinding.testRxPermissionInActivity.setOnClickListener(v -> testRxPermissionInActivity());
+        mBinding.testRxPermissionInFragment.setOnClickListener(v -> testRxPermissionInFragment());
+        mBinding.checkStringsInApps.setOnClickListener(v -> checkStringsInApps());
+    }
+
     void testProtectedAction() {
         Intent intent = new Intent(MainActivity.this, ProtectedActionActivity.class);
         startActivity(intent);
     }
 
-    @OnClick(R.id.test_adb_forward)
     void testAdbForward() {
         Intent intent = new Intent(MainActivity.this, ServerActvitity.class);
         startActivity(intent);
     }
 
-    @OnClick(R.id.test_rx_permission_in_activity)
     void testRxPermissionInActivity() {
         Intent intent = new Intent(MainActivity.this, RxPermissionTestActivity.class);
         startActivity(intent);
     }
 
-    @OnClick(R.id.test_rx_permission_in_fragment)
     void testRxPermissionInFragment() {
         Intent intent = new Intent(MainActivity.this, RxPermissionTestActivity2.class);
         startActivity(intent);
     }
 
-    @OnClick(R.id.check_strings_in_apps)
     void checkStringsInApps() {
         Intent intent = new Intent(MainActivity.this, CheckStringsInAppsActivity.class);
         startActivity(intent);

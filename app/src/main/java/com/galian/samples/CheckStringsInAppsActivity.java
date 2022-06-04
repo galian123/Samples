@@ -11,7 +11,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.LocaleList;
-import android.support.v4.content.ContextCompat;
+import androidx.core.content.ContextCompat;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
@@ -36,6 +36,7 @@ public class CheckStringsInAppsActivity extends Activity {
     private static final String TAG = "CheckStrings";
     private ActivityCheckStringsInAppsBinding mBinding;
     private String mStr;
+    private static final int DEFAULT_FAILED_COUNT_LIMIT = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,26 +44,42 @@ public class CheckStringsInAppsActivity extends Activity {
         mBinding = ActivityCheckStringsInAppsBinding.inflate(getLayoutInflater());
         setContentView(mBinding.getRoot());
         initViews();
-        mBinding.systemApps.setChecked(true);
+        updateTips();
         requestRuntimePermissions();
     }
 
     private void updateTips() {
-        if (mBinding.systemApps.isChecked() && mBinding.nonSystemApps.isChecked()) {
-            mBinding.tips.setText("Search all apps (sys & non-sys apps)");
-        } else if (mBinding.systemApps.isChecked()) {
-            mBinding.tips.setText("Search system apps only");
-        } else if (mBinding.nonSystemApps.isChecked()) {
-            mBinding.tips.setText("Search non-system apps only");
+        StringBuilder stringBuilder = new StringBuilder();
+        if (mBinding.findByBruteForce.isChecked()) {
+            stringBuilder.append("Brute force mode (traverse str ids); ");
         } else {
-            mBinding.tips.setText("At least 'system' or 'non-system' should be checked");
+            stringBuilder.append("Normal mode (only strs in R.java); ");
         }
+
+        if (mBinding.showMoreLog.isChecked()) {
+            stringBuilder.append("More log; ");
+        } else {
+            stringBuilder.append("Less log; ");
+        }
+
+        if (mBinding.systemApps.isChecked() && mBinding.nonSystemApps.isChecked()) {
+            stringBuilder.append("Search all apps (sys & non-sys apps)");
+        } else if (mBinding.systemApps.isChecked()) {
+            stringBuilder.append("Search system apps only");
+        } else if (mBinding.nonSystemApps.isChecked()) {
+            stringBuilder.append("Search non-system apps only");
+        } else {
+            stringBuilder.append("At least 'system' or 'non-system' should be checked");
+        }
+        mBinding.tips.setText(stringBuilder.toString());
     }
 
     private void initViews() {
         mBinding.checkStrings.setOnClickListener(v -> checkStrings());
         mBinding.systemApps.setOnCheckedChangeListener((v, isChecked) -> updateTips());
         mBinding.nonSystemApps.setOnCheckedChangeListener((v, isChecked) -> updateTips());
+        mBinding.showMoreLog.setOnCheckedChangeListener((v, isChecked) -> updateTips());
+        mBinding.findByBruteForce.setOnCheckedChangeListener((v, isChecked) -> updateTips());
         mBinding.searchedStr.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 checkStrings();
@@ -165,8 +182,8 @@ public class CheckStringsInAppsActivity extends Activity {
                     pathListField.setAccessible(true);
                     Object dexPathListObj = pathListField.get(pathClassLoader);
 
-                    Class<?> dexPahtListCls = dexPathListObj.getClass();
-                    Field dexElementsField = dexPahtListCls.getDeclaredField("dexElements");
+                    Class<?> dexPathListCls = dexPathListObj.getClass();
+                    Field dexElementsField = dexPathListCls.getDeclaredField("dexElements");
                     dexElementsField.setAccessible(true);
                     Object elementArrayObj = dexElementsField.get(dexPathListObj);
                     //Class type = elementArrayObj.getClass().getComponentType();
@@ -338,7 +355,7 @@ public class CheckStringsInAppsActivity extends Activity {
                 "found_result.txt", resultStr);
 
         resultStr = resultStr.replaceAll("\n", "<br>\n");
-        resultStr = addBlueColor(resultStr, mStr);
+        resultStr = Utils.Companion.addBlueColor(resultStr, mStr);
 
         resultStr = "<!DOCTYPE html>\n" +
                 "<html>\n" +
@@ -389,12 +406,12 @@ public class CheckStringsInAppsActivity extends Activity {
             }
         }
 
-        int limitCount = 1000;
+        int limitCount = DEFAULT_FAILED_COUNT_LIMIT;
         String limitCountStr = mBinding.limitCount.getText().toString();
         if (!TextUtils.isEmpty(limitCountStr.trim())) {
             limitCount = Integer.parseInt(limitCountStr.trim());
             if (limitCount <= 0) {
-                limitCount = 1000;
+                limitCount = DEFAULT_FAILED_COUNT_LIMIT;
             }
         }
 
@@ -454,9 +471,9 @@ public class CheckStringsInAppsActivity extends Activity {
                         checkedPkgCnt++;
                         continue;
                     }
-                    for (Integer startStrid : stringStartIdList) {
+                    for (Integer startStrId : stringStartIdList) {
                         int failedCnt = 0;
-                        for (int id = startStrid; id < startStrid + 0x10000; id++) {
+                        for (int id = startStrId; id < startStrId + 0x10000; id++) {
                             if (showDebugLog)
                                 Log.e(TAG, "id (hex): " + Integer.toHexString(id) + ", id: " + id);
                             try {
@@ -573,7 +590,7 @@ public class CheckStringsInAppsActivity extends Activity {
                 "found_result.html", resultStr);
         if (ok) {
             runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
-                    "Results are saved to Download dir.", Toast.LENGTH_LONG).show());
+                    "found_result.html is saved to Download dir.", Toast.LENGTH_LONG).show());
         }
     }
 

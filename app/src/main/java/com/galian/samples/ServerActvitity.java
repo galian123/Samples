@@ -1,6 +1,5 @@
 package com.galian.samples;
 
-import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -9,7 +8,9 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Bundle;
 import android.os.PatternMatcher;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.util.Log;
 import android.widget.Toast;
 
@@ -21,11 +22,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 import static android.os.PatternMatcher.PATTERN_LITERAL;
 import static android.os.PatternMatcher.PATTERN_PREFIX;
+
+import com.galian.samples.databinding.ActivityServerActvitityBinding;
 
 public class ServerActvitity extends AppCompatActivity {
 
@@ -34,12 +34,19 @@ public class ServerActvitity extends AppCompatActivity {
     private final static int PORT = 3652;
 
     private ServerSocket mServerSocket = null;
+    private ActivityServerActvitityBinding mBinding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_server_actvitity);
-        ButterKnife.bind(this);
+        mBinding = ActivityServerActvitityBinding.inflate(getLayoutInflater());
+        setContentView(mBinding.getRoot());
+        initViews();
+    }
+
+    private void initViews() {
+        mBinding.startServer.setOnClickListener(v -> startServer());
+        mBinding.stopServer.setOnClickListener(v -> stopServer());
     }
 
     public void dispToast(String text) {
@@ -385,12 +392,10 @@ public class ServerActvitity extends AppCompatActivity {
         return results;
     }
 
-    @OnClick(R.id.start_server)
     void startServer() {
         new ServerThread().start();
     }
 
-    @OnClick(R.id.stop_server)
     void stopServer() {
         if (mRunning) {
             mRunning = false;

@@ -28,7 +28,7 @@
             android:id="@+id/system_apps"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:checked="false"
+            android:checked="true"
             android:text="System apps" />
 
         <CheckBox
@@ -53,7 +53,7 @@
                 android:id="@+id/find_by_brute_force"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="false"
+                android:checked="true"
                 android:text="Brute force" />
 
             <EditText
@@ -62,7 +62,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:textSize="14sp"
-                android:hint="limit failed count (default 1000)" />
+                android:hint="limit failed count (default 100)" />
         </LinearLayout>
 
         <TextView
