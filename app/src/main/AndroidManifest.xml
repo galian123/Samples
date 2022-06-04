@@ -18,7 +18,8 @@
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
     <application
@@ -47,7 +48,9 @@
         <activity
             android:name=".RxPermissionTestActivity2"
             android:label="RxPermission in Fragment" />
-        <activity android:name=".CheckStringsInAppsActivity" />
+        <activity
+            android:name=".CheckStringsInAppsActivity"
+            android:configChanges="screenSize|locale|screenLayout|orientation|keyboardHidden" />
     </application>
 
 </manifest>
