@@ -11,13 +11,14 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.LocaleList;
-import androidx.core.content.ContextCompat;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Toast;
+
+import androidx.core.content.ContextCompat;
 
 import com.galian.samples.databinding.ActivityCheckStringsInAppsBinding;
 
@@ -524,10 +525,23 @@ public class CheckStringsInAppsActivity extends Activity {
 
                     // Check application name
                     boolean appNameMatched = false;
-                    String label = (String) context.getPackageManager().getApplicationLabel(pi.applicationInfo);
+                    String label = "";
+                    try {
+                        label = (String) context.getPackageManager().getApplicationLabel(pi.applicationInfo);
+                    } catch (Exception e) {
+                        Log.e(TAG, e.getMessage());
+                    } catch (Throwable t) {
+                        Log.e(TAG, t.getMessage());
+                    }
                     String label2 = "";
                     if (pi.applicationInfo.labelRes != 0 && resource2 != null) {
-                        label2 = resource2.getString(pi.applicationInfo.labelRes);
+                        try {
+                            label2 = resource2.getString(pi.applicationInfo.labelRes);
+                        } catch (Exception e) {
+                            Log.e(TAG, e.getMessage());
+                        } catch (Throwable t) {
+                            Log.e(TAG, t.getMessage());
+                        }
                     }
 
                     if (label.contains(mStr)
