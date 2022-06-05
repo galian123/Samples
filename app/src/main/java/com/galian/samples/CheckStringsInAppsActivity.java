@@ -88,6 +88,7 @@ public class CheckStringsInAppsActivity extends Activity {
             }
             return false;
         });
+        mBinding.foundCnt.setText("");
     }
 
     void checkStrings() {
@@ -274,6 +275,8 @@ public class CheckStringsInAppsActivity extends Activity {
                                         if (matched) {
                                             Log.e(TAG, "+++++ package: " + pi.packageName);
                                             foundCnt++;
+                                            int finalFoundCnt = foundCnt;
+                                            runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
                                             stringBuilder.append("\n--------------------\n ")
                                                     .append(addBlueColor(foundCnt + ". package: ")).append(pi.packageName)
                                                     .append("\n ").append(addBlueColor("id(hex): "))
@@ -312,12 +315,16 @@ public class CheckStringsInAppsActivity extends Activity {
                     if (appNameMatched) {
                         Log.e(TAG, "+++++ package: " + pi.packageName);
                         foundCnt++;
+                        int finalFoundCnt = foundCnt;
+                        runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
                         stringBuilder.append("\n--------------------\n ")
                                 .append(addBlueColor(foundCnt + ". package: ")).append(pi.packageName)
                                 .append("\n ").append(addBlueColor("app name (" + locale + "): "))
-                                .append(label)
-                                .append("\n ").append(addBlueColor("app name (" + locale2 + "): "))
-                                .append(label2).append("\n");
+                                .append(label).append("\n ");
+                        if (pi.applicationInfo.labelRes != 0) {
+                            stringBuilder.append(addBlueColor("app name (" + locale2 + "): "))
+                                    .append(label2).append("\n");
+                        }
                     }
                 } catch (SecurityException e) {
                     Log.e(TAG, e.getMessage());
@@ -341,9 +348,9 @@ public class CheckStringsInAppsActivity extends Activity {
                 runOnUiThread(() -> mBinding.progress.setText(finalCheckedPkgCnt + "/" + totalPkgCnt));
             }
         }
-        int finalFoundCnt1 = foundCnt;
+        int finalFoundCnt = foundCnt;
         runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
-                "Done. Found " + finalFoundCnt1 + " matches.", Toast.LENGTH_LONG).show());
+                "Done. Found " + finalFoundCnt + " matches.", Toast.LENGTH_LONG).show());
         Log.e(TAG, "Done!!!!!!");
         if (foundCnt <= 0) {
             stringBuilder.append("\nNot found.");
@@ -422,6 +429,8 @@ public class CheckStringsInAppsActivity extends Activity {
         if (filteredAppList.size() > 0) {
             int checkedPkgCnt = 0;
             int totalPkgCnt = filteredAppList.size();
+            int finalFoundCnt = foundCnt;
+            runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
             runOnUiThread(() -> mBinding.progress.setText("0/" + totalPkgCnt));
             stringBuilder.append("Check ").append(filteredAppList.size()).append(" apps.");
             Log.e(TAG, "Check " + filteredAppList.size() + " apps");
@@ -498,6 +507,8 @@ public class CheckStringsInAppsActivity extends Activity {
                                 if (matched) {
                                     Log.e(TAG, "+++++ package: " + pi.packageName);
                                     foundCnt++;
+                                    int finalFoundCnt1 = foundCnt;
+                                    runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
                                     stringBuilder.append("\n--------------------\n ")
                                             .append(addBlueColor(foundCnt + ". package: ")).append(pi.packageName)
                                             .append("\n ").append(addBlueColor("id(hex): "))
@@ -555,12 +566,16 @@ public class CheckStringsInAppsActivity extends Activity {
                     if (appNameMatched) {
                         Log.e(TAG, "+++++ package: " + pi.packageName);
                         foundCnt++;
+                        int finalFoundCnt1 = foundCnt;
+                        runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
                         stringBuilder.append("\n--------------------\n ")
                                 .append(addBlueColor(foundCnt + ". package: ")).append(pi.packageName)
                                 .append("\n ").append(addBlueColor("app name (" + locale + "): "))
-                                .append(label)
-                                .append("\n ").append(addBlueColor("app name (" + locale2 + "): "))
-                                .append(label2).append("\n");
+                                .append(label).append("\n ");
+                        if (pi.applicationInfo.labelRes != 0) {
+                            stringBuilder.append(addBlueColor("app name (" + locale2 + "): "))
+                                    .append(label2).append("\n");
+                        }
                     }
                 } catch (SecurityException e) {
                     Log.e(TAG, "SecurityException: " + e.getMessage());

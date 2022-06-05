@@ -88,6 +88,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="progress" />
+
+            <TextView
+                android:id="@+id/found_cnt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Found %1$d" />
         </LinearLayout>
 
         <TextView
