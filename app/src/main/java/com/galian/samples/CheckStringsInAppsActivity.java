@@ -46,7 +46,8 @@ public class CheckStringsInAppsActivity extends Activity {
         setContentView(mBinding.getRoot());
         initViews();
         updateTips();
-        requestRuntimePermissions();
+        // it can work without permission
+        //requestRuntimePermissions();
     }
 
     private void updateTips() {
@@ -162,6 +163,7 @@ public class CheckStringsInAppsActivity extends Activity {
             Log.e(TAG, "Check " + filteredAppList.size() + " apps");
             for (PackageInfo pi : filteredAppList) {
                 String pkgName = pi.packageName;
+                CharSequence appName = getPackageManager().getApplicationLabel(pi.applicationInfo);
                 Log.e(TAG, "======================== " + pkgName + " ========================");
 
                 try {
@@ -278,13 +280,14 @@ public class CheckStringsInAppsActivity extends Activity {
                                             int finalFoundCnt = foundCnt;
                                             runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
                                             stringBuilder.append("\n--------------------\n ")
-                                                    .append(addBlueColor(foundCnt + ". package: ")).append(pi.packageName)
-                                                    .append("\n ").append(addBlueColor("id(hex): "))
+                                                    .append(addBlueColor(foundCnt + ". Package: ")).append(pi.packageName)
+                                                    .append("\n").append(addBlueColor("App Name: ")).append(appName)
+                                                    .append("\n ").append(addBlueColor("Id(hex): "))
                                                     .append("0x").append(Integer.toHexString(id))
-                                                    .append("\n ").append(addBlueColor("id(dec): ")).append(id)
-                                                    .append("\n ").append(addBlueColor("str(" + locale + "): "))
+                                                    .append("\n ").append(addBlueColor("Id(dec): ")).append(id)
+                                                    .append("\n ").append(addBlueColor("Str(" + locale + "): "))
                                                     .append(str)
-                                                    .append("\n ").append(addBlueColor("str(" + locale2 + "): "))
+                                                    .append("\n ").append(addBlueColor("Str(" + locale2 + "): "))
                                                     .append(str2).append("\n");
                                         }
                                     } catch (Exception e) {
@@ -318,11 +321,11 @@ public class CheckStringsInAppsActivity extends Activity {
                         int finalFoundCnt = foundCnt;
                         runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
                         stringBuilder.append("\n--------------------\n ")
-                                .append(addBlueColor(foundCnt + ". package: ")).append(pi.packageName)
-                                .append("\n ").append(addBlueColor("app name (" + locale + "): "))
+                                .append(addBlueColor(foundCnt + ". Package: ")).append(pi.packageName)
+                                .append("\n ").append(addBlueColor("App Name (" + locale + "): "))
                                 .append(label).append("\n ");
                         if (pi.applicationInfo.labelRes != 0) {
-                            stringBuilder.append(addBlueColor("app name (" + locale2 + "): "))
+                            stringBuilder.append(addBlueColor("App Name (" + locale2 + "): "))
                                     .append(label2).append("\n");
                         }
                     }
@@ -434,8 +437,10 @@ public class CheckStringsInAppsActivity extends Activity {
             runOnUiThread(() -> mBinding.progress.setText("0/" + totalPkgCnt));
             stringBuilder.append("Check ").append(filteredAppList.size()).append(" apps.");
             Log.e(TAG, "Check " + filteredAppList.size() + " apps");
+
             for (PackageInfo pi : filteredAppList) {
                 String pkgName = pi.packageName;
+                CharSequence appName = getPackageManager().getApplicationLabel(pi.applicationInfo);
                 Log.e(TAG, "======================== " + pkgName + " ========================");
 
                 try {
@@ -510,13 +515,14 @@ public class CheckStringsInAppsActivity extends Activity {
                                     int finalFoundCnt1 = foundCnt;
                                     runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
                                     stringBuilder.append("\n--------------------\n ")
-                                            .append(addBlueColor(foundCnt + ". package: ")).append(pi.packageName)
-                                            .append("\n ").append(addBlueColor("id(hex): "))
+                                            .append(addBlueColor(foundCnt + ". Package: ")).append(pi.packageName)
+                                            .append("\n").append(addBlueColor("App Name: ")).append(appName)
+                                            .append("\n ").append(addBlueColor("Id(hex): "))
                                             .append("0x").append(Integer.toHexString(id))
-                                            .append("\n ").append(addBlueColor("id(dec): ")).append(id)
-                                            .append("\n ").append(addBlueColor("str(" + locale + "): "))
+                                            .append("\n ").append(addBlueColor("Id(dec): ")).append(id)
+                                            .append("\n ").append(addBlueColor("Str(" + locale + "): "))
                                             .append(str)
-                                            .append("\n ").append(addBlueColor("str(" + locale2 + "): "))
+                                            .append("\n ").append(addBlueColor("Str(" + locale2 + "): "))
                                             .append(str2).append("\n");
                                 }
                             } catch (Resources.NotFoundException e) {
@@ -569,11 +575,11 @@ public class CheckStringsInAppsActivity extends Activity {
                         int finalFoundCnt1 = foundCnt;
                         runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
                         stringBuilder.append("\n--------------------\n ")
-                                .append(addBlueColor(foundCnt + ". package: ")).append(pi.packageName)
-                                .append("\n ").append(addBlueColor("app name (" + locale + "): "))
+                                .append(addBlueColor(foundCnt + ". Package: ")).append(pi.packageName)
+                                .append("\n ").append(addBlueColor("App Name (" + locale + "): "))
                                 .append(label).append("\n ");
                         if (pi.applicationInfo.labelRes != 0) {
-                            stringBuilder.append(addBlueColor("app name (" + locale2 + "): "))
+                            stringBuilder.append(addBlueColor("App Name (" + locale2 + "): "))
                                     .append(label2).append("\n");
                         }
                     }
