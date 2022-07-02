@@ -38,6 +38,7 @@ public class CheckStringsInAppsActivity extends Activity {
     private ActivityCheckStringsInAppsBinding mBinding;
     private String mStr;
     private static final int DEFAULT_FAILED_COUNT_LIMIT = 100;
+    private int FoundCnt = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +64,11 @@ public class CheckStringsInAppsActivity extends Activity {
         } else {
             stringBuilder.append("Less log; ");
         }
+        if (mBinding.showExceptionLog.isChecked()) {
+            stringBuilder.append("Include exception log; ");
+        } else {
+            stringBuilder.append("No exception log; ");
+        }
 
         if (mBinding.systemApps.isChecked() && mBinding.nonSystemApps.isChecked()) {
             stringBuilder.append("Search all apps (sys & non-sys apps)");
@@ -81,6 +87,7 @@ public class CheckStringsInAppsActivity extends Activity {
         mBinding.systemApps.setOnCheckedChangeListener((v, isChecked) -> updateTips());
         mBinding.nonSystemApps.setOnCheckedChangeListener((v, isChecked) -> updateTips());
         mBinding.showMoreLog.setOnCheckedChangeListener((v, isChecked) -> updateTips());
+        mBinding.showExceptionLog.setOnCheckedChangeListener((v, isChecked) -> updateTips());
         mBinding.findByBruteForce.setOnCheckedChangeListener((v, isChecked) -> updateTips());
         mBinding.searchedStr.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
@@ -116,9 +123,87 @@ public class CheckStringsInAppsActivity extends Activity {
         }
     }
 
+    class ResConfig {
+        Resources resources;
+        Locale locale;
+
+        public ResConfig(Resources r, Locale l) {
+            resources = r;
+            locale = l;
+        }
+    }
+
+    ResConfig getResources2(Context pkgContext) {
+        Resources resources = pkgContext.getResources();
+        LocaleList localeList = resources.getConfiguration().getLocales();
+        Locale locale = localeList.get(0);
+
+        Resources resource2;
+        Configuration configuration = new Configuration();
+        if (locale.getLanguage().equals(Locale.CHINESE.getLanguage())) {
+            configuration.setLocale(Locale.ENGLISH);
+        } else if (locale.getLanguage().equals(Locale.ENGLISH.getLanguage())) {
+            configuration.setLocale(Locale.CHINESE);
+        } else {
+            return null;
+        }
+
+        Locale locale2 = configuration.getLocales().get(0);
+        Context context2 = pkgContext.createConfigurationContext(configuration);
+        resource2 = context2.getResources();
+        return new ResConfig(resource2, locale2);
+    }
+
     private static final int SCOPE_ALL = 1;
     private static final int SCOPE_ONLY_SYS_APP = 2;
     private static final int SCOPE_ONLY_NON_SYS_APP = 3;
+
+    ArrayList<String> getRClassNames(ClassLoader pathClassLoader) {
+        boolean showDebugLog = mBinding.showMoreLog.isChecked();
+        boolean showExceptionLog = mBinding.showExceptionLog.isChecked();
+        ArrayList<String> rClassNameList = new ArrayList<>();
+        try {
+            Class<?> baseDexClassLoaderCls = Class.forName("dalvik.system.BaseDexClassLoader");
+            Field pathListField = baseDexClassLoaderCls.getDeclaredField("pathList");
+            pathListField.setAccessible(true);
+            Object dexPathListObj = pathListField.get(pathClassLoader);
+
+            Class<?> dexPathListCls = dexPathListObj.getClass();
+            Field dexElementsField = dexPathListCls.getDeclaredField("dexElements");
+            dexElementsField.setAccessible(true);
+            Object elementArrayObj = dexElementsField.get(dexPathListObj);
+            int len = Array.getLength(elementArrayObj);
+
+            if (showDebugLog)
+                Log.d(TAG, "-----------------------------------------------------");
+
+            for (int i = 0; i < len; i++) {
+                Object elementObj = Array.get(elementArrayObj, i);
+                Class<?> ElementCls = elementObj.getClass();
+                Field dexFileField = ElementCls.getDeclaredField("dexFile");
+                dexFileField.setAccessible(true);
+                Object dexFileObj = dexFileField.get(elementObj);
+                if (dexFileObj != null) {
+                    Class<?> dexFileCls = dexFileObj.getClass();
+                    Method DexFile_entries = dexFileCls.getMethod("entries");
+                    Enumeration<String> e = (Enumeration<String>) DexFile_entries.invoke(dexFileObj);
+                    while (e.hasMoreElements()) {
+                        String className = e.nextElement();
+                        if (className.contains(".R$string")) {
+                            if (showDebugLog) Log.d(TAG, className);
+                            rClassNameList.add(className);
+                        }
+                    }
+                }
+            }
+            if (showDebugLog)
+                Log.d(TAG, "-----------------------------------------------------");
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException
+                | NoSuchMethodException | InvocationTargetException e) {
+            if (showExceptionLog) e.printStackTrace();
+        }
+        return rClassNameList;
+    }
 
     void findStringsInRClass() {
         int scope = 0;
@@ -138,6 +223,7 @@ public class CheckStringsInAppsActivity extends Activity {
                 "Finding " + mStr + " ...", Toast.LENGTH_LONG).show());
 
         boolean showDebugLog = mBinding.showMoreLog.isChecked();
+        boolean showExceptionLog = mBinding.showExceptionLog.isChecked();
         List<PackageInfo> pkgList = pm.getInstalledPackages(flags);
         if (scope == SCOPE_ALL || scope == SCOPE_ONLY_SYS_APP) {
             filteredAppList = pkgList;
@@ -151,20 +237,21 @@ public class CheckStringsInAppsActivity extends Activity {
             }
         }
 
-        ArrayList<String> rClassNameList = new ArrayList<>();
         StringBuilder stringBuilder = new StringBuilder();
 
-        int foundCnt = 0;
+        FoundCnt = 0;
         if (filteredAppList.size() > 0) {
             int checkedPkgCnt = 0;
             int totalPkgCnt = filteredAppList.size();
+            int finalFoundCnt = FoundCnt;
+            runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
             runOnUiThread(() -> mBinding.progress.setText("0/" + totalPkgCnt));
             stringBuilder.append("Check ").append(filteredAppList.size()).append(" apps");
-            Log.e(TAG, "Check " + filteredAppList.size() + " apps");
+            Log.d(TAG, "Check " + filteredAppList.size() + " apps");
             for (PackageInfo pi : filteredAppList) {
                 String pkgName = pi.packageName;
                 CharSequence appName = getPackageManager().getApplicationLabel(pi.applicationInfo);
-                Log.e(TAG, "======================== " + pkgName + " ========================");
+                if (showDebugLog) Log.d(TAG, "===== checking pkg: " + pkgName);
 
                 try {
                     Context context = createPackageContext(pkgName, CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
@@ -172,79 +259,37 @@ public class CheckStringsInAppsActivity extends Activity {
                     try {
                         pathClassLoader = context.getClassLoader();
                     } catch (Throwable t) {
-                        Log.e(TAG, t.getMessage());
+                        if (showExceptionLog) {
+                            Log.e(TAG, "context.getClassLoader(): "
+                                    + t.getClass().getCanonicalName() + ":" + t.getMessage());
+                            t.printStackTrace();
+                        }
                         checkedPkgCnt++;
                         int finalCheckedPkgCnt = checkedPkgCnt;
                         runOnUiThread(() -> mBinding.progress.setText(finalCheckedPkgCnt + "/" + totalPkgCnt));
                         continue;
                     }
 
-                    if (showDebugLog)
-                        Log.e(TAG, "-----------------------------------------------------");
-                    Class<?> baseDexClassLoaderCls = Class.forName("dalvik.system.BaseDexClassLoader");
-                    Field pathListField = baseDexClassLoaderCls.getDeclaredField("pathList");
-                    pathListField.setAccessible(true);
-                    Object dexPathListObj = pathListField.get(pathClassLoader);
-
-                    Class<?> dexPathListCls = dexPathListObj.getClass();
-                    Field dexElementsField = dexPathListCls.getDeclaredField("dexElements");
-                    dexElementsField.setAccessible(true);
-                    Object elementArrayObj = dexElementsField.get(dexPathListObj);
-                    //Class type = elementArrayObj.getClass().getComponentType();
-                    int len = Array.getLength(elementArrayObj);
-
-                    rClassNameList.clear();
-
-                    for (int i = 0; i < len; i++) {
-                        Object elementObj = Array.get(elementArrayObj, i);
-                        Class<?> ElementCls = elementObj.getClass();
-                        Field dexFileField = ElementCls.getDeclaredField("dexFile");
-                        dexFileField.setAccessible(true);
-                        Object dexFileObj = dexFileField.get(elementObj);
-                        if (dexFileObj != null) {
-                            Class<?> dexFileCls = dexFileObj.getClass();
-                            Method DexFile_entries = dexFileCls.getMethod("entries");
-                            Enumeration<String> e = (Enumeration<String>) DexFile_entries.invoke(dexFileObj);
-                            while (e.hasMoreElements()) {
-                                String className = e.nextElement();
-                                //Log.e(TAG, className);
-                                if (className.contains(".R$string")) {
-                                    if (showDebugLog) Log.e(TAG, className);
-                                    rClassNameList.add(className);
-                                }
-                            }
-                        }
-                    }
-                    if (showDebugLog)
-                        Log.e(TAG, "-----------------------------------------------------");
-
+                    ArrayList<String> rClassNameList = getRClassNames(pathClassLoader);
                     Resources resources = context.getResources();
                     LocaleList localeList = resources.getConfiguration().getLocales();
                     Locale locale = localeList.get(0);
 
-                    boolean needCheckRes2 = false;
                     Resources resource2 = null;
-                    Configuration configuration = new Configuration();
-                    if (locale.getLanguage().equals(Locale.CHINESE.getLanguage())) {
-                        configuration.setLocale(Locale.ENGLISH);
-                        needCheckRes2 = true;
-                    } else if (locale.getLanguage().equals(Locale.ENGLISH.getLanguage())) {
-                        configuration.setLocale(Locale.CHINESE);
-                        needCheckRes2 = true;
+                    Locale locale2 = null;
+                    ResConfig resConfig = getResources2(context);
+                    if (resConfig != null) {
+                        resource2 = resConfig.resources;
+                        locale2 = resConfig.locale;
                     }
 
-                    Locale locale2 = configuration.getLocales().get(0);
-                    if (needCheckRes2) {
-                        Context context2 = context.createConfigurationContext(configuration);
-                        resource2 = context2.getResources();
-                    }
                     if (rClassNameList.size() > 0) {
                         HashSet<Integer> idPool = new HashSet<>();
                         for (String rClassName : rClassNameList) {
                             if (rClassName.equals("android.support.v7.appcompat.R$string")) {
                                 continue;
                             }
-                            if (showDebugLog) Log.e(TAG, "R class name: " + rClassName);
+                            if (showDebugLog) Log.d(TAG, "R class name: " + rClassName);
                             Class<?> rClassObj = context.getClassLoader().loadClass(rClassName);
                             List<Integer> ids = ReflectUtils.getAllStaticFinalIntValues(rClassObj);
                             if (ids.size() > 0) {
@@ -255,47 +300,47 @@ public class CheckStringsInAppsActivity extends Activity {
                                         idPool.add(id);
                                     }
                                     if (showDebugLog)
-                                        Log.e(TAG, "id (hex): " + Integer.toHexString(id) + ", id: " + id);
+                                        Log.d(TAG, "id (hex): " + Integer.toHexString(id) + ", id: " + id);
                                     try {
                                         boolean matched = false;
                                         String str = resources.getString(id);
-                                        if (showDebugLog) Log.e(TAG, "str: " + str);
+                                        if (showDebugLog) Log.d(TAG, "str: " + str);
                                         if (str.contains(mStr)
                                                 || str.toLowerCase().contains(mStr.toLowerCase())) {
                                             matched = true;
                                         }
 
                                         String str2 = "";
-                                        if (needCheckRes2) {
+                                        if (resource2 != null) {
                                             str2 = resource2.getString(id);
-                                            if (showDebugLog) Log.e(TAG, "str2: " + str2);
+                                            if (showDebugLog) Log.d(TAG, "str2: " + str2);
                                             if (str2.contains(mStr)
                                                     || str2.toLowerCase().contains(mStr.toLowerCase())) {
                                                 matched = true;
                                             }
                                         }
                                         if (matched) {
-                                            Log.e(TAG, "+++++ package: " + pi.packageName);
-                                            foundCnt++;
-                                            int finalFoundCnt = foundCnt;
-                                            runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
-                                            stringBuilder.append("\n--------------------\n ")
-                                                    .append(addBlueColor(foundCnt + ". Package: ")).append(pi.packageName)
-                                                    .append("\n").append(addBlueColor("App Name: ")).append(appName)
-                                                    .append("\n ").append(addBlueColor("Id(hex): "))
-                                                    .append("0x").append(Integer.toHexString(id))
-                                                    .append("\n ").append(addBlueColor("Id(dec): ")).append(id)
-                                                    .append("\n ").append(addBlueColor("Str(" + locale + "): "))
-                                                    .append(str)
-                                                    .append("\n ").append(addBlueColor("Str(" + locale2 + "): "))
-                                                    .append(str2).append("\n");
+                                            Log.d(TAG, "+++++ package: " + pi.packageName);
+                                            FoundCnt++;
+                                            int finalFoundCnt2 = FoundCnt;
+                                            runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt2));
+                                            String colorResult = formatFoundResult(pi.packageName, appName, id, locale, str,
+                                                    resource2, locale2, str2, true);
+                                            String resultLog = formatFoundResult(pi.packageName, appName, id, locale, str,
+                                                    resource2, locale2, str2, false);
+                                            Log.d(TAG, resultLog);
+                                            stringBuilder.append(colorResult);
                                         }
                                     } catch (Exception e) {
-                                        Log.e(TAG, e.getMessage());
+                                        if (showExceptionLog) {
+                                            Log.e(TAG, "get string in findStringsInRClass(): "
+                                                    + e.getClass().getCanonicalName() + ", " + e.getMessage());
+                                            e.printStackTrace();
+                                        }
                                     }
                                 }
                             } else {
-                                Log.e(TAG, "No ids.");
+                                if (showDebugLog) Log.d(TAG, "No ids.");
                             }
                         }
                     }
@@ -316,49 +361,54 @@ public class CheckStringsInAppsActivity extends Activity {
                     }
 
                     if (appNameMatched) {
-                        Log.e(TAG, "+++++ package: " + pi.packageName);
-                        foundCnt++;
-                        int finalFoundCnt = foundCnt;
-                        runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
-                        stringBuilder.append("\n--------------------\n ")
-                                .append(addBlueColor(foundCnt + ". Package: ")).append(pi.packageName)
-                                .append("\n ").append(addBlueColor("App Name (" + locale + "): "))
-                                .append(label).append("\n ");
-                        if (pi.applicationInfo.labelRes != 0) {
-                            stringBuilder.append(addBlueColor("App Name (" + locale2 + "): "))
-                                    .append(label2).append("\n");
-                        }
+                        Log.d(TAG, "+++++ package: " + pi.packageName);
+                        FoundCnt++;
+                        int finalFoundCnt2 = FoundCnt;
+                        runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt2));
+                        String colorResult = formatAppNameResult(pi.packageName, locale, label, locale2, label2, true);
+                        String resultLog = formatAppNameResult(pi.packageName, locale, label, locale2, label2, false);
+                        Log.d(TAG, resultLog);
+                        stringBuilder.append(colorResult);
                     }
                 } catch (SecurityException e) {
-                    Log.e(TAG, e.getMessage());
+                    if (showExceptionLog) {
+                        Log.e(TAG, e.getClass().getCanonicalName() + ": " + e.getMessage());
+                        e.printStackTrace();
+                    }
                 } catch (PackageManager.NameNotFoundException e) {
-                    Log.e(TAG, e.getMessage());
+                    if (showExceptionLog) {
+                        Log.e(TAG, "PackageManager.NameNotFoundException: " + e.getMessage());
+                        e.printStackTrace();
+                    }
                 } catch (ClassNotFoundException e) {
-                    Log.e(TAG, e.getMessage());
-                } catch (NoSuchFieldException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                } catch (NoSuchMethodException e) {
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    e.printStackTrace();
+                    if (showExceptionLog) {
+                        Log.e(TAG, "ClassNotFoundException: " + e.getMessage());
+                        e.printStackTrace();
+                    }
                 } catch (RuntimeException e) {
-                    Log.e(TAG, e.getMessage());
+                    if (showExceptionLog) {
+                        Log.e(TAG, "RuntimeException: " + e.getMessage());
+                        e.printStackTrace();
+                    }
                 }
                 checkedPkgCnt++;
                 int finalCheckedPkgCnt = checkedPkgCnt;
                 runOnUiThread(() -> mBinding.progress.setText(finalCheckedPkgCnt + "/" + totalPkgCnt));
             }
         }
-        int finalFoundCnt = foundCnt;
+
+        String sysResult = findSystemStringsInR();
+        stringBuilder.append(sysResult);
+
+        int finalFoundCnt = FoundCnt;
         runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
                 "Done. Found " + finalFoundCnt + " matches.", Toast.LENGTH_LONG).show());
-        Log.e(TAG, "Done!!!!!!");
-        if (foundCnt <= 0) {
+        Log.d(TAG, "Done!!!!!!");
+        Log.d(TAG, "Found " + FoundCnt + " matches.");
+        if (FoundCnt <= 0) {
             stringBuilder.append("\nNot found.");
         } else {
-            stringBuilder.insert(0, "Found " + foundCnt + " matches.\n");
+            stringBuilder.insert(0, "Found " + FoundCnt + " matches.\n");
         }
 
         String resultStr = stringBuilder.toString();
@@ -404,6 +454,7 @@ public class CheckStringsInAppsActivity extends Activity {
                 "Finding " + mStr + " ...", Toast.LENGTH_LONG).show());
 
         boolean showDebugLog = mBinding.showMoreLog.isChecked();
+        boolean showExceptionLog = mBinding.showExceptionLog.isChecked();
         List<PackageInfo> pkgList = pm.getInstalledPackages(flags);
         if (scope == SCOPE_ALL || scope == SCOPE_ONLY_SYS_APP) {
             filteredAppList = pkgList;
@@ -428,20 +479,20 @@ public class CheckStringsInAppsActivity extends Activity {
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        int foundCnt = 0;
+        FoundCnt = 0;
         if (filteredAppList.size() > 0) {
             int checkedPkgCnt = 0;
             int totalPkgCnt = filteredAppList.size();
-            int finalFoundCnt = foundCnt;
+            int finalFoundCnt = FoundCnt;
             runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt));
             runOnUiThread(() -> mBinding.progress.setText("0/" + totalPkgCnt));
             stringBuilder.append("Check ").append(filteredAppList.size()).append(" apps.");
-            Log.e(TAG, "Check " + filteredAppList.size() + " apps");
+            Log.d(TAG, "Check " + filteredAppList.size() + " apps");
 
             for (PackageInfo pi : filteredAppList) {
                 String pkgName = pi.packageName;
                 CharSequence appName = getPackageManager().getApplicationLabel(pi.applicationInfo);
-                Log.e(TAG, "======================== " + pkgName + " ========================");
+                if (showDebugLog) Log.d(TAG, "===== checking pkg: " + pkgName);
 
                 try {
                     Context context = createPackageContext(pkgName,
@@ -450,21 +501,12 @@ public class CheckStringsInAppsActivity extends Activity {
                     LocaleList localeList = resources.getConfiguration().getLocales();
                     Locale locale = localeList.get(0);
 
-                    boolean needCheckRes2 = false;
                     Resources resource2 = null;
-                    Configuration configuration = new Configuration();
-                    if (locale.getLanguage().equals(Locale.CHINESE.getLanguage())) {
-                        configuration.setLocale(Locale.ENGLISH);
-                        needCheckRes2 = true;
-                    } else if (locale.getLanguage().equals(Locale.ENGLISH.getLanguage())) {
-                        configuration.setLocale(Locale.CHINESE);
-                        needCheckRes2 = true;
-                    }
-
-                    Locale locale2 = configuration.getLocales().get(0);
-                    if (needCheckRes2) {
-                        Context context2 = context.createConfigurationContext(configuration);
-                        resource2 = context2.getResources();
+                    Locale locale2 = null;
+                    ResConfig resConfig = getResources2(context);
+                    if (resConfig != null) {
+                        resource2 = resConfig.resources;
+                        locale2 = resConfig.locale;
                     }
 
                     ArrayList<Integer> stringStartIdList = new ArrayList<>();
@@ -476,13 +518,18 @@ public class CheckStringsInAppsActivity extends Activity {
                                 continue;
                             }
                             stringStartIdList.add(id);
-                            Log.e(TAG, "Start string id: " + id + ", (hex): 0x" + Integer.toHexString(id));
+                            if (showDebugLog)
+                                Log.d(TAG, "Start string id: " + id + ", (hex): 0x" + Integer.toHexString(id));
                         } catch (Exception e) {
-                            Log.e(TAG, e.getCause() + ": " + e.getMessage());
+                            if (showExceptionLog) {
+                                Log.e(TAG, "resources.getValue(): " + e.getClass().getCanonicalName()
+                                        + "" + e.getMessage());
+                                e.printStackTrace();
+                            }
                         }
                     }
                     if (stringStartIdList.size() <= 0) {
-                        Log.e(TAG, "No strings in pkg " + pi.packageName);
+                        if (showDebugLog) Log.d(TAG, "No strings in pkg " + pi.packageName);
                         checkedPkgCnt++;
                         continue;
                     }
@@ -490,47 +537,47 @@ public class CheckStringsInAppsActivity extends Activity {
                         int failedCnt = 0;
                         for (int id = startStrId; id < startStrId + 0x10000; id++) {
                             if (showDebugLog)
-                                Log.e(TAG, "id (hex): " + Integer.toHexString(id) + ", id: " + id);
+                                Log.d(TAG, "id (hex): " + Integer.toHexString(id) + ", id: " + id);
                             try {
                                 boolean matched = false;
                                 String str = resources.getString(id);
-                                if (showDebugLog) Log.e(TAG, "str: " + str);
+                                if (showDebugLog) Log.d(TAG, "str: " + str);
                                 if (str.contains(mStr)
                                         || str.toLowerCase().contains(mStr.toLowerCase())) {
                                     matched = true;
                                 }
 
                                 String str2 = "";
-                                if (needCheckRes2) {
+                                if (resource2 != null) {
                                     str2 = resource2.getString(id);
-                                    if (showDebugLog) Log.e(TAG, "str2: " + str2);
+                                    if (showDebugLog) Log.d(TAG, "str2: " + str2);
                                     if (str2.contains(mStr)
                                             || str2.toLowerCase().contains(mStr.toLowerCase())) {
                                         matched = true;
                                     }
                                 }
                                 if (matched) {
-                                    Log.e(TAG, "+++++ package: " + pi.packageName);
-                                    foundCnt++;
-                                    int finalFoundCnt1 = foundCnt;
+                                    Log.d(TAG, "+++++ package: " + pi.packageName);
+                                    FoundCnt++;
+                                    int finalFoundCnt1 = FoundCnt;
                                     runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
-                                    stringBuilder.append("\n--------------------\n ")
-                                            .append(addBlueColor(foundCnt + ". Package: ")).append(pi.packageName)
-                                            .append("\n").append(addBlueColor("App Name: ")).append(appName)
-                                            .append("\n ").append(addBlueColor("Id(hex): "))
-                                            .append("0x").append(Integer.toHexString(id))
-                                            .append("\n ").append(addBlueColor("Id(dec): ")).append(id)
-                                            .append("\n ").append(addBlueColor("Str(" + locale + "): "))
-                                            .append(str)
-                                            .append("\n ").append(addBlueColor("Str(" + locale2 + "): "))
-                                            .append(str2).append("\n");
+                                    String colorResult = formatFoundResult(pi.packageName, appName, id, locale, str,
+                                            resource2, locale2, str2, true);
+                                    String resultLog = formatFoundResult(pi.packageName, appName, id, locale, str,
+                                            resource2, locale2, str2, false);
+                                    Log.d(TAG, resultLog);
+                                    stringBuilder.append(colorResult);
                                 }
                             } catch (Resources.NotFoundException e) {
-                                Log.e(TAG, "Resources.NotFoundException: " + e.getMessage());
+                                if (showExceptionLog) {
+                                    Log.e(TAG, "in findStringsBruteForce(), Resources.NotFoundException: " + e.getMessage());
+                                }
                                 // when the string does not exists, then break this loop, try another string start id
                                 failedCnt++;
                             } catch (RuntimeException e) {
-                                Log.e(TAG, e.getMessage());
+                                if (showExceptionLog) {
+                                    Log.e(TAG, e.getClass().getCanonicalName() + ": " + e.getMessage());
+                                }
                                 failedCnt++;
                             }
                             if (failedCnt >= limitCount) {
@@ -546,18 +593,23 @@ public class CheckStringsInAppsActivity extends Activity {
                     try {
                         label = (String) context.getPackageManager().getApplicationLabel(pi.applicationInfo);
                     } catch (Exception e) {
-                        Log.e(TAG, e.getMessage());
+                        if (showExceptionLog) {
+                            Log.e(TAG, e.getClass().getCanonicalName() + ": " + e.getMessage());
+                        }
                     } catch (Throwable t) {
-                        Log.e(TAG, t.getMessage());
+                        if (showExceptionLog)
+                            Log.e(TAG, t.getClass().getCanonicalName() + ": " + t.getMessage());
                     }
                     String label2 = "";
                     if (pi.applicationInfo.labelRes != 0 && resource2 != null) {
                         try {
                             label2 = resource2.getString(pi.applicationInfo.labelRes);
                         } catch (Exception e) {
-                            Log.e(TAG, e.getMessage());
+                            if (showExceptionLog)
+                                Log.e(TAG, e.getClass().getCanonicalName() + ": " + e.getMessage());
                         } catch (Throwable t) {
-                            Log.e(TAG, t.getMessage());
+                            if (showExceptionLog)
+                                Log.e(TAG, t.getClass().getCanonicalName() + ": " + t.getMessage());
                         }
                     }
 
@@ -570,39 +622,40 @@ public class CheckStringsInAppsActivity extends Activity {
                         appNameMatched = true;
                     }
                     if (appNameMatched) {
-                        Log.e(TAG, "+++++ package: " + pi.packageName);
-                        foundCnt++;
-                        int finalFoundCnt1 = foundCnt;
+                        Log.d(TAG, "+++++ package: " + pi.packageName);
+                        FoundCnt++;
+                        int finalFoundCnt1 = FoundCnt;
                         runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
-                        stringBuilder.append("\n--------------------\n ")
-                                .append(addBlueColor(foundCnt + ". Package: ")).append(pi.packageName)
-                                .append("\n ").append(addBlueColor("App Name (" + locale + "): "))
-                                .append(label).append("\n ");
-                        if (pi.applicationInfo.labelRes != 0) {
-                            stringBuilder.append(addBlueColor("App Name (" + locale2 + "): "))
-                                    .append(label2).append("\n");
-                        }
+                        String colorResult = formatAppNameResult(pi.packageName, locale, label, locale2, label2, true);
+                        String resultLog = formatAppNameResult(pi.packageName, locale, label, locale2, label2, false);
+                        Log.d(TAG, resultLog);
+                        stringBuilder.append(colorResult);
                     }
                 } catch (SecurityException e) {
-                    Log.e(TAG, "SecurityException: " + e.getMessage());
+                    if (showExceptionLog) Log.e(TAG, "SecurityException: " + e.getMessage());
                 } catch (PackageManager.NameNotFoundException e) {
-                    Log.e(TAG, "NameNotFoundException: " + e.getMessage());
+                    if (showExceptionLog) Log.e(TAG, "NameNotFoundException: " + e.getMessage());
                 } catch (RuntimeException e) {
-                    Log.e(TAG, "RuntimeException: " + e.getMessage());
+                    if (showExceptionLog) Log.e(TAG, "RuntimeException: " + e.getMessage());
                 }
                 checkedPkgCnt++;
                 int finalCheckedPkgCnt = checkedPkgCnt;
                 runOnUiThread(() -> mBinding.progress.setText(finalCheckedPkgCnt + "/" + totalPkgCnt));
             }
         }
-        int finalFoundCnt = foundCnt;
+
+        String sysResult = findSystemStringsBruteForce();
+        stringBuilder.append(sysResult);
+
+        int finalFoundCnt = FoundCnt;
         runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
                 "Done. Found " + finalFoundCnt + " matches.", Toast.LENGTH_LONG).show());
-        Log.e(TAG, "Done!!!!!!");
-        if (foundCnt <= 0) {
+        Log.d(TAG, "Done!!!!!!");
+        Log.d(TAG, "Found " + FoundCnt + " matches.");
+        if (FoundCnt <= 0) {
             stringBuilder.append("\nNot found.");
         } else {
-            stringBuilder.insert(0, "Found " + foundCnt + " matches.\n");
+            stringBuilder.insert(0, "Found " + FoundCnt + " matches.\n");
         }
         String resultStr = stringBuilder.toString();
         FileUtils.saveFile(CheckStringsInAppsActivity.this,
@@ -627,6 +680,266 @@ public class CheckStringsInAppsActivity extends Activity {
             runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
                     "found_result.html is saved to Download dir.", Toast.LENGTH_LONG).show());
         }
+    }
+
+    String findSystemStringsInR() {
+        Log.d(TAG, "Checking package: android");
+        boolean showDebugLog = mBinding.showMoreLog.isChecked();
+        boolean showExceptionLog = mBinding.showExceptionLog.isChecked();
+        String sysPackageName = "android";
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            Context sysContext = createPackageContext(sysPackageName,
+                    CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
+            ApplicationInfo appInfo = sysContext.getPackageManager().getApplicationInfo(sysPackageName, 0);
+            CharSequence appName = sysContext.getPackageManager().getApplicationLabel(appInfo);
+
+            Resources resources = sysContext.getResources();
+            LocaleList localeList = resources.getConfiguration().getLocales();
+            Locale locale = localeList.get(0);
+
+            ResConfig resConfig = getResources2(sysContext);
+            Resources resource2 = null;
+            Locale locale2 = null;
+            if (resConfig != null) {
+                resource2 = resConfig.resources;
+                locale2 = resConfig.locale;
+            }
+            ArrayList<String> rStringList = new ArrayList<>();
+            rStringList.add("com.android.internal.R$string");
+            //rStringList.add("android.support.v7.appcompat.R$string");
+            //rStringList.add("android.support.v4.appcompat.R$string");
+            rStringList.add("androidx.activity.R$string");
+            rStringList.add("androidx.appcompat.R$string");
+            rStringList.add("androidx.appcompat.resources.R$string");
+            rStringList.add("androidx.asynclayoutinflater.R$string");
+            rStringList.add("androidx.browser.R$string");
+            rStringList.add("androidx.core.R$string");
+            rStringList.add("androidx.constraintlayout.widget.R$string");
+            rStringList.add("androidx.fragment.R$string");
+            rStringList.add("androidx.legacy.coreutils.R$string");
+            rStringList.add("androidx.legacy.coreui.R$string");
+
+            HashSet<Integer> idPool = new HashSet<>();
+
+            for (String rString : rStringList) {
+                List<Integer> idList = ReflectUtils.getAllStaticIntValues(rString);
+                if (showDebugLog) Log.d(TAG, "idList size: " + idList.size());
+                for (Integer strId : idList) {
+                    if (idPool.contains(strId)) {
+                        continue;
+                    }
+                    idPool.add(strId);
+                    boolean matched = false;
+                    String str = sysContext.getResources().getString(strId);
+                    if (showDebugLog)
+                        Log.d(TAG, "strId: " + strId + ", hex(strId): " + Integer.toHexString(strId) + ", str: " + str);
+                    if (str.contains(mStr)
+                            || str.toLowerCase().contains(mStr.toLowerCase())) {
+                        matched = true;
+                    }
+
+                    String str2 = "";
+                    if (resource2 != null) {
+                        str2 = resource2.getString(strId);
+                        if (showDebugLog) Log.d(TAG, "str2: " + str2);
+                        if (str2.contains(mStr)
+                                || str2.toLowerCase().contains(mStr.toLowerCase())) {
+                            matched = true;
+                        }
+                    }
+                    if (matched) {
+                        Log.d(TAG, "+++++ package: android");
+                        FoundCnt++;
+                        int finalFoundCnt1 = FoundCnt;
+                        runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
+                        String colorResult = formatFoundResult(sysPackageName, appName, strId, locale, str,
+                                resource2, locale2, str2, true);
+                        String resultLog = formatFoundResult(sysPackageName, appName, strId, locale, str,
+                                resource2, locale2, str2, false);
+                        Log.d(TAG, resultLog);
+                        stringBuilder.append(colorResult);
+                    }
+                }
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            if (showExceptionLog) Log.e(TAG, "in findSystemStringsInR() PackageManager.NameNotFoundException: " + e.getMessage());
+        }
+        return stringBuilder.toString();
+    }
+
+    String findSystemStringsBruteForce() {
+        Log.d(TAG, "Checking package: android");
+        boolean showDebugLog = mBinding.showMoreLog.isChecked();
+        boolean showExceptionLog = mBinding.showExceptionLog.isChecked();
+        String sysPackageName = "android";
+
+        int limitCount = DEFAULT_FAILED_COUNT_LIMIT;
+        String limitCountStr = mBinding.limitCount.getText().toString();
+        if (!TextUtils.isEmpty(limitCountStr.trim())) {
+            limitCount = Integer.parseInt(limitCountStr.trim());
+            if (limitCount <= 0) {
+                limitCount = DEFAULT_FAILED_COUNT_LIMIT;
+            }
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            Context context = createPackageContext(sysPackageName,
+                    CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
+            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(sysPackageName, 0);
+            CharSequence appName = context.getPackageManager().getApplicationLabel(appInfo);
+
+            Resources resources = context.getResources();
+            LocaleList localeList = resources.getConfiguration().getLocales();
+            Locale locale = localeList.get(0);
+
+            Resources resource2 = null;
+            Locale locale2 = null;
+            ResConfig resConfig = getResources2(context);
+            if (resConfig != null) {
+                resource2 = resConfig.resources;
+                locale2 = resConfig.locale;
+            }
+
+            ArrayList<Integer> stringStartIdList = new ArrayList<>();
+            for (int id = 0x01010000; id < 0x01200000; id += 0x10000) {
+                try {
+                    TypedValue typedValue = new TypedValue();
+                    resources.getValue(id, typedValue, true);
+                    if (typedValue.type != TypedValue.TYPE_STRING) {
+                        continue;
+                    }
+                    stringStartIdList.add(id);
+                    if (showDebugLog)
+                        Log.d(TAG, "Start string id: " + id + ", (hex): 0x" + Integer.toHexString(id));
+                } catch (Exception e) {
+                    if (showExceptionLog) {
+                        if (e.getCause() != null) {
+                            Log.e(TAG, "in findSystemStringsBruteForce() resources.getValue, " + e.getCause() + ": " + e.getMessage());
+                        } else {
+                            Log.e(TAG, "in findSystemStringsBruteForce() resources.getValue, " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            if (stringStartIdList.size() <= 0) {
+                Log.d(TAG, "No strings in " + sysPackageName + ", something wrong.");
+                return "";
+            }
+            for (Integer startStrId : stringStartIdList) {
+                int failedCnt = 0;
+                for (int id = startStrId; id < startStrId + 0x10000; id++) {
+                    if (showDebugLog)
+                        Log.d(TAG, "id (hex): " + Integer.toHexString(id) + ", id: " + id);
+                    try {
+                        boolean matched = false;
+                        String str = resources.getString(id);
+                        if (showDebugLog) Log.d(TAG, "str: " + str);
+                        if (str.contains(mStr)
+                                || str.toLowerCase().contains(mStr.toLowerCase())) {
+                            matched = true;
+                        }
+
+                        String str2 = "";
+                        if (resource2 != null) {
+                            str2 = resource2.getString(id);
+                            if (showDebugLog) Log.d(TAG, "str2: " + str2);
+                            if (str2.contains(mStr)
+                                    || str2.toLowerCase().contains(mStr.toLowerCase())) {
+                                matched = true;
+                            }
+                        }
+                        if (matched) {
+                            Log.d(TAG, "+++++ package: android");
+                            FoundCnt++;
+                            int finalFoundCnt1 = FoundCnt;
+                            runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
+                            String colorResult = formatFoundResult(sysPackageName, appName, id, locale, str,
+                                    resource2, locale2, str2, true);
+                            String resultLog = formatFoundResult(sysPackageName, appName, id, locale, str,
+                                    resource2, locale2, str2, false);
+                            Log.d(TAG, resultLog);
+                            stringBuilder.append(colorResult);
+                        }
+                    } catch (Resources.NotFoundException e) {
+                        if (showExceptionLog)
+                            Log.e(TAG, "Resources.NotFoundException: " + e.getMessage());
+                        // when the string does not exists, then break this loop, try another string start id
+                        failedCnt++;
+                    } catch (RuntimeException e) {
+                        if (showExceptionLog)
+                            Log.e(TAG, e.getClass().getCanonicalName() + ": " + e.getMessage());
+                        failedCnt++;
+                    }
+                    if (failedCnt >= limitCount) {
+                        // sometimes some string ids are missing, skip them, but stop when exceed limit
+                        break;
+                    }
+                }
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            if (showExceptionLog) {
+                Log.e(TAG, "in findSystemStringsBruteForce() PackageManager.NameNotFoundException: " + e.getMessage());
+            }
+        }
+        return stringBuilder.toString();
+    }
+
+    String formatFoundResult(String pkg, CharSequence appName, int id, Locale locale, String str,
+                             Resources resource2, Locale locale2, String str2, boolean withColor) {
+        StringBuilder strBuilder = new StringBuilder();
+        strBuilder.append("\n--------------------\n");
+        if (withColor) {
+            strBuilder.append(addBlueColor(FoundCnt + ". Package: ")).append(pkg)
+                    .append("\n").append(addBlueColor("App Name: ")).append(appName)
+                    .append("\n ").append(addBlueColor("Id(hex): "))
+                    .append("0x").append(Integer.toHexString(id))
+                    .append("\n ").append(addBlueColor("Id(dec): ")).append(id)
+                    .append("\n ").append(addBlueColor("Str(" + locale + "): "))
+                    .append(str);
+            if (resource2 != null) {
+                strBuilder.append("\n ").append(addBlueColor("Str(" + locale2 + "): "))
+                        .append(str2).append("\n");
+            }
+        } else {
+            strBuilder.append(FoundCnt).append(". Package: ").append(pkg)
+                    .append(", ").append("App Name: ").append(appName)
+                    .append(", ").append("Id(hex): ")
+                    .append("0x").append(Integer.toHexString(id))
+                    .append(", ").append("Id(dec): ").append(id)
+                    .append(", ").append("Str(").append(locale).append("): ")
+                    .append(str);
+            if (resource2 != null) {
+                strBuilder.append(", ").append("Str(").append(locale2).append("): ")
+                        .append(str2);
+            }
+        }
+        return strBuilder.toString();
+    }
+
+    String formatAppNameResult(String pkg, Locale locale, String label,
+                               Locale locale2, String label2, boolean withColor) {
+        StringBuilder strBuilder = new StringBuilder();
+        strBuilder.append("\n--------------------\n");
+        if (withColor) {
+            strBuilder.append(addBlueColor(FoundCnt + ". Package: ")).append(pkg)
+                    .append("\n ").append(addBlueColor("App Name (" + locale + "): "))
+                    .append(label).append("\n ");
+            if (!TextUtils.isEmpty(label2)) {
+                strBuilder.append(addBlueColor("App Name (" + locale2 + "): "))
+                        .append(label2).append("\n");
+            }
+        } else {
+            strBuilder.append(FoundCnt).append(". Package: ").append(pkg)
+                    .append(", ").append("App Name (").append(locale).append("): ")
+                    .append(label).append(", ");
+            if (!TextUtils.isEmpty(label2)) {
+                strBuilder.append("App Name (").append(locale2).append("): ")
+                        .append(label2);
+            }
+        }
+        return strBuilder.toString();
     }
 
     String addBlueColor(String str, String word) {

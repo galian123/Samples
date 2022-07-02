@@ -45,6 +45,13 @@
             android:checked="false"
             android:text="Show more log" />
 
+        <CheckBox
+            android:id="@+id/show_exception_log"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:text="Show exception log" />
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
