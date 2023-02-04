@@ -102,10 +102,10 @@ public class CheckStringsInAppsActivity extends Activity {
             return;
         }
         if (!mBinding.systemApps.isChecked()
-                && !mBinding.nonSystemApps.isChecked()) {
+            && !mBinding.nonSystemApps.isChecked()) {
             Toast.makeText(this,
-                    "At least one of 'System apps' and 'Non-system apps' should be checked.",
-                    Toast.LENGTH_LONG).show();
+                "At least one of 'System apps' and 'Non-system apps' should be checked.",
+                Toast.LENGTH_LONG).show();
             return;
         }
         new Thread(this::checkStringsAsync, "checkStringsThread").start();
@@ -204,16 +204,16 @@ public class CheckStringsInAppsActivity extends Activity {
             if (showDebugLog)
                 Log.d(TAG, "-----------------------------------------------------");
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException
-                | NoSuchMethodException | InvocationTargetException e) {
+            | NoSuchMethodException | InvocationTargetException e) {
             if (showExceptionLog) e.printStackTrace();
         }
         return rClassNameList;
     }
 
     String[] mNneedColorText = new String[]{
-            "[0-9]+\\. Package: ", "App Name: ", "App Name \\([a-zA-Z_-]+\\): ",
-            "Version Name: ", "Version Code: ",
-            "Id\\(hex\\): ", "Id\\(dec\\): ", "Str\\([a-zA-Z_-]+\\): "
+        "[0-9]+\\. Package: ", "App Name: ", "App Name \\([a-zA-Z_-]+\\): ",
+        "Version Name: ", "Version Code: ",
+        "Id\\(hex\\): ", "Id\\(dec\\): ", "Str\\([a-zA-Z_-]+\\): "
     };
 
     @SuppressLint("SetTextI18n")
@@ -232,7 +232,7 @@ public class CheckStringsInAppsActivity extends Activity {
         }
         PackageManager pm = getPackageManager();
         runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
-                "Finding " + mStr + " ...", Toast.LENGTH_LONG).show());
+            "Finding " + mStr + " ...", Toast.LENGTH_LONG).show());
 
         boolean showDebugLog = mBinding.showMoreLog.isChecked();
         boolean showExceptionLog = mBinding.showExceptionLog.isChecked();
@@ -275,7 +275,7 @@ public class CheckStringsInAppsActivity extends Activity {
                     } catch (Throwable t) {
                         if (showExceptionLog) {
                             Log.e(TAG, "context.getClassLoader(): "
-                                    + t.getClass().getCanonicalName() + ":" + t.getMessage());
+                                + t.getClass().getCanonicalName() + ":" + t.getMessage());
                             t.printStackTrace();
                         }
                         checkedPkgCnt++;
@@ -321,7 +321,7 @@ public class CheckStringsInAppsActivity extends Activity {
                                             Log.d(TAG, "str : " + str);
                                         }
                                         if (str.contains(mStr)
-                                                || str.toLowerCase().contains(mStr.toLowerCase())) {
+                                            || str.toLowerCase().contains(mStr.toLowerCase())) {
                                             matched = true;
                                         }
 
@@ -332,7 +332,7 @@ public class CheckStringsInAppsActivity extends Activity {
                                                 Log.d(TAG, "str2: " + str2);
                                             }
                                             if (str2.contains(mStr)
-                                                    || str2.toLowerCase().contains(mStr.toLowerCase())) {
+                                                || str2.toLowerCase().contains(mStr.toLowerCase())) {
                                                 matched = true;
                                             }
                                         }
@@ -341,15 +341,15 @@ public class CheckStringsInAppsActivity extends Activity {
                                             int finalFoundCnt2 = FoundCnt;
                                             runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt2));
                                             String resultLog = formatFoundResult(pi.packageName, appName,
-                                                    versionName, longVerCode, id, locale, str,
-                                                    resource2, locale2, str2);
+                                                versionName, longVerCode, id, locale, str,
+                                                resource2, locale2, str2);
                                             Log.d(TAG, resultLog);
                                             stringBuilder.append(resultLog);
                                         }
                                     } catch (Exception e) {
                                         if (showExceptionLog) {
                                             Log.e(TAG, "get string in findStringsInRClass(): "
-                                                    + e.getClass().getCanonicalName() + ", " + e.getMessage());
+                                                + e.getClass().getCanonicalName() + ", " + e.getMessage());
                                             e.printStackTrace();
                                         }
                                     }
@@ -366,12 +366,12 @@ public class CheckStringsInAppsActivity extends Activity {
                     if (pi.applicationInfo.labelRes != 0 && resource2 != null) {
                         label2 = resource2.getString(pi.applicationInfo.labelRes);
                         if (label2.contains(mStr)
-                                || label2.toLowerCase().contains(mStr.toLowerCase())) {
+                            || label2.toLowerCase().contains(mStr.toLowerCase())) {
                             appNameMatched = true;
                         }
                     }
                     if (label.contains(mStr)
-                            || label.toLowerCase().contains(mStr.toLowerCase())) {
+                        || label.toLowerCase().contains(mStr.toLowerCase())) {
                         appNameMatched = true;
                     }
 
@@ -415,7 +415,7 @@ public class CheckStringsInAppsActivity extends Activity {
 
         int finalFoundCnt = FoundCnt;
         runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
-                "Done. Found " + finalFoundCnt + " matches.", Toast.LENGTH_LONG).show());
+            "Done. Found " + finalFoundCnt + " matches.", Toast.LENGTH_LONG).show());
         Log.d(TAG, "Done!!!!!!");
         Log.d(TAG, "Found " + FoundCnt + " matches.");
         if (FoundCnt <= 0) {
@@ -427,7 +427,7 @@ public class CheckStringsInAppsActivity extends Activity {
         String resultStr = stringBuilder.toString();
         if (FoundCnt > 0) {
             FileUtils.saveFile(CheckStringsInAppsActivity.this,
-                    "found_result.txt", resultStr);
+                "found_result.txt", resultStr);
         }
         resultStr = resultStr.replaceAll("\n", "<br>\n");
         for (String str : mNneedColorText) {
@@ -440,10 +440,10 @@ public class CheckStringsInAppsActivity extends Activity {
         runOnUiThread(() -> mBinding.result.setText(Html.fromHtml(finalResultStr, 0)));
         if (FoundCnt > 0) {
             boolean htmlOk = FileUtils.saveFile(CheckStringsInAppsActivity.this,
-                    "found_result.html", resultStr);
+                "found_result.html", resultStr);
             if (htmlOk) {
                 runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
-                        "found_result.html is saved to Download dir.", Toast.LENGTH_LONG).show());
+                    "found_result.html is saved to Download dir.", Toast.LENGTH_LONG).show());
             }
         }
     }
@@ -464,7 +464,7 @@ public class CheckStringsInAppsActivity extends Activity {
         }
         PackageManager pm = getPackageManager();
         runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
-                "Finding " + mStr + " ...", Toast.LENGTH_LONG).show());
+            "Finding " + mStr + " ...", Toast.LENGTH_LONG).show());
 
         boolean showDebugLog = mBinding.showMoreLog.isChecked();
         boolean showExceptionLog = mBinding.showExceptionLog.isChecked();
@@ -511,7 +511,7 @@ public class CheckStringsInAppsActivity extends Activity {
 
                 try {
                     Context context = createPackageContext(pkgName,
-                            CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
+                        CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
                     Resources resources = context.getResources();
                     LocaleList localeList = resources.getConfiguration().getLocales();
                     Locale locale = localeList.get(0);
@@ -538,7 +538,7 @@ public class CheckStringsInAppsActivity extends Activity {
                         } catch (Exception e) {
                             if (showExceptionLog) {
                                 Log.e(TAG, "resources.getValue(): " + e.getClass().getCanonicalName()
-                                        + "" + e.getMessage());
+                                    + "" + e.getMessage());
                                 e.printStackTrace();
                             }
                         }
@@ -559,7 +559,7 @@ public class CheckStringsInAppsActivity extends Activity {
                                     Log.d(TAG, "str : " + str);
                                 }
                                 if (str.contains(mStr)
-                                        || str.toLowerCase().contains(mStr.toLowerCase())) {
+                                    || str.toLowerCase().contains(mStr.toLowerCase())) {
                                     matched = true;
                                 }
 
@@ -570,7 +570,7 @@ public class CheckStringsInAppsActivity extends Activity {
                                         Log.d(TAG, "str2: " + str2);
                                     }
                                     if (str2.contains(mStr)
-                                            || str2.toLowerCase().contains(mStr.toLowerCase())) {
+                                        || str2.toLowerCase().contains(mStr.toLowerCase())) {
                                         matched = true;
                                     }
                                 }
@@ -579,8 +579,8 @@ public class CheckStringsInAppsActivity extends Activity {
                                     int finalFoundCnt1 = FoundCnt;
                                     runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
                                     String resultLog = formatFoundResult(pi.packageName, appName,
-                                            versionName, longVerCode, id, locale, str,
-                                            resource2, locale2, str2);
+                                        versionName, longVerCode, id, locale, str,
+                                        resource2, locale2, str2);
                                     Log.d(TAG, resultLog);
                                     stringBuilder.append(resultLog);
                                 }
@@ -624,11 +624,11 @@ public class CheckStringsInAppsActivity extends Activity {
                     }
 
                     if (label.contains(mStr)
-                            || label.toLowerCase().contains(mStr.toLowerCase())) {
+                        || label.toLowerCase().contains(mStr.toLowerCase())) {
                         appNameMatched = true;
                     }
                     if (label2.contains(mStr)
-                            || label2.toLowerCase().contains(mStr.toLowerCase())) {
+                        || label2.toLowerCase().contains(mStr.toLowerCase())) {
                         appNameMatched = true;
                     }
                     if (appNameMatched) {
@@ -657,7 +657,7 @@ public class CheckStringsInAppsActivity extends Activity {
 
         int finalFoundCnt = FoundCnt;
         runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
-                "Done. Found " + finalFoundCnt + " matches.", Toast.LENGTH_LONG).show());
+            "Done. Found " + finalFoundCnt + " matches.", Toast.LENGTH_LONG).show());
         Log.d(TAG, "Done!!!!!!");
         Log.d(TAG, "Found " + FoundCnt + " matches.");
         if (FoundCnt <= 0) {
@@ -668,7 +668,7 @@ public class CheckStringsInAppsActivity extends Activity {
         String resultStr = stringBuilder.toString();
         if (FoundCnt > 0) {
             FileUtils.saveFile(CheckStringsInAppsActivity.this,
-                    "found_result.txt", resultStr);
+                "found_result.txt", resultStr);
         }
 
         resultStr = resultStr.replaceAll("\n", "<br>\n");
@@ -682,10 +682,10 @@ public class CheckStringsInAppsActivity extends Activity {
         runOnUiThread(() -> mBinding.result.setText(Html.fromHtml(finalResultStr, 0)));
         if (FoundCnt > 0) {
             boolean ok = FileUtils.saveFile(CheckStringsInAppsActivity.this,
-                    "found_result.html", resultStr);
+                "found_result.html", resultStr);
             if (ok) {
                 runOnUiThread(() -> Toast.makeText(CheckStringsInAppsActivity.this,
-                        "found_result.html is saved to Download dir.", Toast.LENGTH_LONG).show());
+                    "found_result.html is saved to Download dir.", Toast.LENGTH_LONG).show());
             }
         }
     }
@@ -699,7 +699,7 @@ public class CheckStringsInAppsActivity extends Activity {
         StringBuilder stringBuilder = new StringBuilder();
         try {
             Context sysContext = createPackageContext(sysPackageName,
-                    CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
+                CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
             ApplicationInfo appInfo = sysContext.getPackageManager().getApplicationInfo(sysPackageName, 0);
             CharSequence appName = sysContext.getPackageManager().getApplicationLabel(appInfo);
             PackageInfo sysPkgInfo = getPackageManager().getPackageInfo(sysPackageName, 0);
@@ -749,7 +749,7 @@ public class CheckStringsInAppsActivity extends Activity {
                         Log.d(TAG, "str : " + str);
                     }
                     if (str.contains(mStr)
-                            || str.toLowerCase().contains(mStr.toLowerCase())) {
+                        || str.toLowerCase().contains(mStr.toLowerCase())) {
                         matched = true;
                     }
 
@@ -758,7 +758,7 @@ public class CheckStringsInAppsActivity extends Activity {
                         str2 = resource2.getString(strId);
                         if (showDebugLog) Log.d(TAG, "str2: " + str2);
                         if (str2.contains(mStr)
-                                || str2.toLowerCase().contains(mStr.toLowerCase())) {
+                            || str2.toLowerCase().contains(mStr.toLowerCase())) {
                             matched = true;
                         }
                     }
@@ -767,8 +767,8 @@ public class CheckStringsInAppsActivity extends Activity {
                         int finalFoundCnt1 = FoundCnt;
                         runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
                         String resultLog = formatFoundResult(sysPackageName, appName,
-                                versionName, longVersionCode, strId, locale, str,
-                                resource2, locale2, str2);
+                            versionName, longVersionCode, strId, locale, str,
+                            resource2, locale2, str2);
                         Log.d(TAG, resultLog);
                         stringBuilder.append(resultLog);
                     }
@@ -800,7 +800,7 @@ public class CheckStringsInAppsActivity extends Activity {
         StringBuilder stringBuilder = new StringBuilder();
         try {
             Context context = createPackageContext(sysPackageName,
-                    CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
+                CONTEXT_INCLUDE_CODE | CONTEXT_IGNORE_SECURITY);
             ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(sysPackageName, 0);
             CharSequence appName = context.getPackageManager().getApplicationLabel(appInfo);
             PackageInfo sysPkgInfo = getPackageManager().getPackageInfo(sysPackageName, 0);
@@ -834,10 +834,10 @@ public class CheckStringsInAppsActivity extends Activity {
                     if (showExceptionLog) {
                         if (e.getCause() != null) {
                             Log.e(TAG, "in findSystemStringsBruteForce() resources.getValue, " +
-                                    e.getClass() + ", " + e.getCause() + ": " + e.getMessage());
+                                e.getClass() + ", " + e.getCause() + ": " + e.getMessage());
                         } else {
                             Log.e(TAG, "in findSystemStringsBruteForce() resources.getValue, " +
-                                    e.getClass() + ", " + e.getMessage());
+                                e.getClass() + ", " + e.getMessage());
                         }
                     }
                 }
@@ -857,7 +857,7 @@ public class CheckStringsInAppsActivity extends Activity {
                             Log.d(TAG, "str : " + str);
                         }
                         if (str.contains(mStr)
-                                || str.toLowerCase().contains(mStr.toLowerCase())) {
+                            || str.toLowerCase().contains(mStr.toLowerCase())) {
                             matched = true;
                         }
 
@@ -868,7 +868,7 @@ public class CheckStringsInAppsActivity extends Activity {
                                 Log.d(TAG, "str2: " + str2);
                             }
                             if (str2.contains(mStr)
-                                    || str2.toLowerCase().contains(mStr.toLowerCase())) {
+                                || str2.toLowerCase().contains(mStr.toLowerCase())) {
                                 matched = true;
                             }
                         }
@@ -877,8 +877,8 @@ public class CheckStringsInAppsActivity extends Activity {
                             int finalFoundCnt1 = FoundCnt;
                             runOnUiThread(() -> mBinding.foundCnt.setText("Found " + finalFoundCnt1));
                             String resultLog = formatFoundResult(sysPackageName, appName,
-                                    versionName, longVersionCode, id, locale, str,
-                                    resource2, locale2, str2);
+                                versionName, longVersionCode, id, locale, str,
+                                resource2, locale2, str2);
                             Log.d(TAG, resultLog);
                             stringBuilder.append(resultLog);
                         }
@@ -912,15 +912,15 @@ public class CheckStringsInAppsActivity extends Activity {
         StringBuilder strBuilder = new StringBuilder();
         strBuilder.append("\n--------------------\n");
         strBuilder.append(FoundCnt).append(". Package: ").append(pkg)
-                .append("\nApp Name: ").append(appName)
-                .append("\nVersion Name: ").append(versionName)
-                .append("\nVersion Code: ").append(longVerCode)
-                .append("\nId(hex): 0x").append(Integer.toHexString(id))
-                .append("\nId(dec): ").append(id)
-                .append("\nStr(").append(locale).append("): ").append(str);
+            .append("\nApp Name: ").append(appName)
+            .append("\nVersion Name: ").append(versionName)
+            .append("\nVersion Code: ").append(longVerCode)
+            .append("\nId(hex): 0x").append(Integer.toHexString(id))
+            .append("\nId(dec): ").append(id)
+            .append("\nStr(").append(locale).append("): ").append(str);
         if (resource2 != null) {
             strBuilder.append("\nStr(").append(locale2).append("): ")
-                    .append(str2);
+                .append(str2);
         }
         return strBuilder.toString();
     }
@@ -930,7 +930,7 @@ public class CheckStringsInAppsActivity extends Activity {
         StringBuilder strBuilder = new StringBuilder();
         strBuilder.append("\n--------------------\n");
         strBuilder.append(FoundCnt).append(". Package: ").append(pkg)
-                .append("\nApp Name (").append(locale).append("): ").append(label);
+            .append("\nApp Name (").append(locale).append("): ").append(label);
         if (!TextUtils.isEmpty(label2)) {
             strBuilder.append("\nApp Name (").append(locale2).append("): ").append(label2);
         }
@@ -950,13 +950,13 @@ public class CheckStringsInAppsActivity extends Activity {
 
     String wrapHtml(String str) {
         str = "<!DOCTYPE html>\n" +
-                "<html>\n" +
-                "    <head>\n" +
-                "        <meta charset=\"utf-8\">\n" +
-                "    </head>\n" +
-                "    <body>" + str +
-                "   </body>\n" +
-                "</html>";
+            "<html>\n" +
+            "    <head>\n" +
+            "        <meta charset=\"utf-8\">\n" +
+            "    </head>\n" +
+            "    <body>" + str +
+            "   </body>\n" +
+            "</html>";
         return str;
     }
 
@@ -964,7 +964,7 @@ public class CheckStringsInAppsActivity extends Activity {
 
     private void requestRuntimePermissions() {
         String[] permissions = new String[]{
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
         };
         requestPermissions(permissions, REQUEST_PERMISSION);
     }
