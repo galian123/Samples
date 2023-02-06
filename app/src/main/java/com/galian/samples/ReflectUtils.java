@@ -51,6 +51,7 @@ public final class ReflectUtils {
 
     public static List<Integer> getAllStaticFinalIntValues(Class<?> cls) {
         List<Integer> ids = new ArrayList<Integer>();
+        if (cls == null) return ids;
         try {
             Field[] fields = cls.getDeclaredFields();
             if (fields.length > 0) {
