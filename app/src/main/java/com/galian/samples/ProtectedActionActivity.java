@@ -18,8 +18,8 @@ public class ProtectedActionActivity extends AppCompatActivity {
         setContentView(mBinding.getRoot());
         String action = "android.intent.action.BOOT_COMPLETED";
         String action2 = "com.galian.action.MY_ACTION";
-        boolean actionProtected = Utils.isProtectedBroatcast(action);
-        boolean action2Protected = Utils.isProtectedBroatcast(action2);
+        boolean actionProtected = Utils.isProtectedBroadcast(action) == 1;
+        boolean action2Protected = Utils.isProtectedBroadcast(action2) == 1;
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Test case 1: ");

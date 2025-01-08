@@ -1,6 +1,7 @@
 *.iml
 *.swp
 .gradle
+.idea/
 .idea/*.xml
 /local.properties
 .idea
@@ -17,3 +18,4 @@
 .cxx
 local.properties
 keystore.properties
+*.keystore

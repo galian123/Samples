@@ -29,7 +29,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -38,19 +38,24 @@
         </activity>
         <activity
             android:name=".ProtectedActionActivity"
-            android:label="Check Action" />
+            android:label="Check Action"
+            android:exported="false"/>
         <activity
             android:name=".ServerActvitity"
-            android:label="ServerActivity" />
+            android:label="ServerActivity"
+            android:exported="false"/>
         <activity
             android:name=".RxPermissionTestActivity"
-            android:label="RxPermission in Activity" />
+            android:label="RxPermission in Activity"
+            android:exported="false"/>
         <activity
             android:name=".RxPermissionTestActivity2"
-            android:label="RxPermission in Fragment" />
+            android:label="RxPermission in Fragment"
+            android:exported="false"/>
         <activity
             android:name=".CheckStringsInAppsActivity"
-            android:configChanges="screenSize|locale|screenLayout|orientation|keyboardHidden" />
+            android:configChanges="screenSize|locale|screenLayout|orientation|keyboardHidden"
+            android:exported="false"/>
     </application>
 
 </manifest>
